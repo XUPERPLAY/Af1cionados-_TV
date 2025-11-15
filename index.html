@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AF1CIONADOS TV</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest "></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #121212;
+      color: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      background: #1f1f1f;
+      width: 100%;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    header img {
+      width: 50px;
+      height: 50px;
+      margin-right: 10px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+    }
+
+    #player {
+      background: black;
+      width: 90%;
+      max-width: 800px;
+      margin: 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    video, audio {
+      width: 100%;
+      background: black;
+      border-radius: 10px;
+    }
+
+    #radioPlaceholder {
+      display: none;
+      width: 100%;
+      height: 100%;
+      background: black url('https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png') center no-repeat;
+      background-size: contain;
+      border-radius: 10px;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #searchInput {
+      background: #2a2a2a;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px;
+      width: 90%;
+      max-width: 800px;
+      transition: all 0.3s ease;
+    }
+
+    #searchInput:focus {
+      outline: none;
+      box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      background: #292929;
+      color: white;
+      padding: 10px 15px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-align: center;
+      min-width: 100px;
+      flex: 1 1 auto;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .tab:hover {
+      background: #3a3a3a;
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: #333;
+      transform: translateY(-2px);
+    }
+
+    .channelList {
+      background: #1a1a1a;
+      width: 90%;
+      max-width: 800px;
+      padding: 10px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .channel {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      border-radius: 5px;
+      margin: 5px 0;
+      cursor: pointer;
+      background: #292929;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    .channel img {
+      width: 30px;
+      height: 30px;
+      margin-right: 10px;
+    }
+
+    .channel:hover {
+      background-color: #333;
+      transform: translateY(-2px);
+    }
+
+    .channel.selected {
+      background: white;
+      color: black;
+      transform: translateY(-2px);
+    }
+
+    #channelOverlay {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      font-size: 14px;
+      color: white;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 8px 12px;
+      border-radius: 8px;
+      z-index: 10;
+      display: none;
+      font-weight: bold;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      transition: opacity 0.5s ease;
+      opacity: 0;
+    }
+
+    #channelOverlay.show {
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      #player,
+      #searchInput,
+      .channelList {
+        width: 95%;
+      }
+      header img {
+        width: 40px;
+        height: 40px;
+      }
+      header h1 {
+        font-size: 20px;
+      }
+      .tabs {
+        flex-direction: column;
+        align-items: center;
+      }
+      .tab {
+        width: 90%;
+        margin: 5px 0;
+      }
+      #channelOverlay {
+        bottom: 10px;
+        left: 10px;
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      header {
+        padding: 8px 16px;
+      }
+      header img {
+        width: 35px;
+        height: 35px;
+      }
+      header h1 {
+        font-size: 18px;
+      }
+      #player {
+        margin: 5px;
+      }
+      #searchInput {
+        padding: 8px;
+        margin: 5px;
+      }
+      .channel img {
+        width: 25px;
+        height: 25px;
+      }
+      .channel {
+        padding: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png " alt="Logo">
+  <h1>AF1CIONADOS TV</h1>
+</header>
+
+<div id="player">
+  <video id="video" controls autoplay preload="none" style="display: block;"></video>
+  <audio id="audio" controls autoplay preload="none" style="display: none;"></audio>
+  <div id="radioPlaceholder"></div>
+  <div id="channelOverlay"></div>
+</div>
+
+<input type="text" id="searchInput" placeholder="Buscar canal...">
+
+<div class="tabs">
+  <div class="tab active" data-type="all">Todos los Canales</div>
+  <div class="tab" data-type="country">Países</div>
+  <div class="tab" data-type="category">Categorías</div>
+  <div class="tab" data-type="radio">Radios</div>
+</div>
+
+<div class="channelList" id="channelList">
+  <!-- Canales se cargarán aquí -->
+</div>
+
+<script>
+  const video = document.getElementById('video');
+  const audio = document.getElementById('audio');
+  const radioPlaceholder = document.getElementById('radioPlaceholder');
+  const searchInput = document.getElementById('searchInput');
+  const tabs = document.querySelectorAll('.tab');
+  const channelList = document.getElementById('channelList');
+  let allChannels = [];
+  let currentHls = null;
+  let currentMode = 'tv';
+
+  // Cargar canales por defecto
+  loadAllChannels();
+
+  // Evento de búsqueda
+  searchInput.addEventListener('input', function () {
+    const filtered = allChannels.filter(c =>
+      c.name.toLowerCase().includes(this.value.toLowerCase())
+    );
+    displayChannels(filtered, currentMode === 'radio');
+  });
+
+  // Evento de clic en pestañas
+  tabs.forEach(tab => {
+    tab.addEventListener('click', function () {
+      tabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      const type = this.getAttribute('data-type');
+      currentMode = type === 'radio' ? 'radio' : 'tv';
+      if (type === 'all') {
+        loadAllChannels();
+      } else if (type === 'country') {
+        loadChannelsByType('country');
+      } else if (type === 'category') {
+        loadChannelsByType('category');
+      } else if (type === 'radio') {
+        loadRadioCountries();
+      }
+    });
+  });
+
+  function loadAllChannels() {
+    fetch('https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/all-channels.json ')
+      .then(response => response.json())
+      .then(data => {
+        allChannels = data.map(channel => ({
+          name: channel.name,
+          url: channel.iptv_urls[0] || 'No disponible',
+          logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' // URL del logotipo
+        }));
+        displayChannels(allChannels, false);
+      })
+      .catch(error => {
+        console.error('Error loading channels:', error);
+        channelList.innerHTML = '<div>Error al cargar los canales</div>';
+      });
+  }
+
+  function loadChannelsByType(type) {
+    const channelsByType = {
+      country: [
+        { name: 'Andorra', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/countries/ad.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'United Arab Emirates', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/countries/ae.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'México', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/countries/mx.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'USA', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/countries/us.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Argentina', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/countries/ar.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Reino Unido', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/countries/gb.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Francia', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/countries/fr.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Brasil', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/countries/br.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' }
+      ],
+      category: [
+        { name: 'Animation', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/animation.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Auto', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/auto.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Business', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/business.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Classic', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/classic.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Comedy', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/comedy.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Cooking', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/cooking.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Culture', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/culture.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Documentary', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/documentary.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Education', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/education.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Entertainment', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/entertainment.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Family', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/family.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'General', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/general.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Kids', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/kids.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Legislative', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/legislative.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Lifestyle', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/lifestyle.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Movies', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/movies.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Music', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/music.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'News', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/news.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Outdoor', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/outdoor.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Public', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/public.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Relax', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/relax.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Religious', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/religious.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Science', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/science.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Series', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/series.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Shop', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/shop.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Show', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/show.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Sports', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/sports.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Top News', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/top-news.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Travel', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/travel.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' },
+        { name: 'Weather', url: 'https://raw.githubusercontent.com/TVGarden/tv-garden-channel-list/main/channels/raw/categories/weather.json ', logo: 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png ' }
+      ]
+    };
+
+    const channels = channelsByType[type];
+    channelList.innerHTML = '';
+    channels.forEach(channel => {
+      const div = document.createElement('div');
+      div.className = 'channel';
+      div.innerHTML = `
+        <img src="${channel.logo}" alt="${channel.name}">
+        <span>${channel.name}</span>
+      `;
+      div.onclick = () => loadRemoteM3U(channel.url);
+      channelList.appendChild(div);
+    });
+  }
+
+  function loadRemoteM3U(url) {
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        allChannels = data.map(channel => ({
+          name: channel.name,
+          url: channel.iptv_urls[0] || 'No disponible',
+          logo: channel.logo || 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png '
+        }));
+        displayChannels(allChannels, false);
+      })
+      .catch(error => {
+        console.error('Error loading channels from', url, error);
+        channelList.innerHTML = '<div>Error al cargar los canales</div>';
+      });
+  }
+
+  function loadRadioCountries() {
+    fetch('https://de1.api.radio-browser.info/json/countries')
+      .then(response => response.json())
+      .then(data => {
+        data.sort((a, b) => b.stationcount - a.stationcount);
+        channelList.innerHTML = '';
+        data.forEach(country => {
+          const div = document.createElement('div');
+          div.className = 'channel';
+          const flagUrl = `https://flagcdn.com/28x21/${country.iso_3166_1.toLowerCase()}.png`;
+          div.innerHTML = `
+            <img src="${flagUrl}" alt="${country.name}">
+            <span>${country.name} (${country.stationcount})</span>
+          `;
+          div.onclick = () => loadRadioStations(country.name);
+          channelList.appendChild(div);
+        });
+      })
+      .catch(error => {
+        console.error('Error loading radio countries:', error);
+        channelList.innerHTML = '<div>Error al cargar los países de radio</div>';
+      });
+  }
+
+  function loadRadioStations(countryName) {
+    fetch(`https://de1.api.radio-browser.info/json/stations/bycountryexact/${encodeURIComponent(countryName)}`)
+      .then(response => response.json())
+      .then(data => {
+        allChannels = data.map(station => ({
+          name: station.name,
+          url: station.url_resolved,
+          logo: station.favicon || 'https://i.postimg.cc/L4xpnNy5/logo11-3-19385.png '
+        }));
+        displayChannels(allChannels, true);
+      })
+      .catch(error => {
+        console.error('Error loading radio stations:', error);
+        channelList.innerHTML = '<div>Error al cargar las radios</div>';
+      });
+  }
+
+  function displayChannels(channels, isRadio = false) {
+    channelList.innerHTML = '';
+    if (channels.length === 0) {
+      channelList.innerHTML = '<div>No se encontraron canales</div>';
+      return;
+    }
+    channels.forEach(channel => {
+      const div = document.createElement('div');
+      div.className = 'channel';
+      div.innerHTML = `
+        <img src="${channel.logo}" alt="${channel.name}" loading="lazy">
+        <span>${channel.name}</span>
+      `;
+      div.onclick = () => {
+        document.querySelectorAll('.channel').forEach(c => c.classList.remove('selected'));
+        div.classList.add('selected');
+        playChannel(channel.url, channel.name, isRadio);
+      };
+      channelList.appendChild(div);
+    });
+  }
+
+  function playChannel(url, name, isRadio = false) {
+    if (currentHls) {
+      currentHls.destroy();
+      currentHls = null;
+    }
+    const player = isRadio ? audio : video;
+    const isHlsStream = url.endsWith('.m3u8') || url.endsWith('.m3u') || url.includes('.m3u8') || url.includes('.m3u');
+    video.style.display = isRadio ? 'none' : 'block';
+    audio.style.display = isRadio ? 'block' : 'none';
+    radioPlaceholder.style.display = isRadio ? 'block' : 'none';
+    if (isRadio) {
+      video.pause();
+      video.src = '';
+    } else {
+      audio.pause();
+      audio.src = '';
+    }
+    if (isHlsStream && Hls.isSupported()) {
+      currentHls = new Hls({ enableWorker: false }); // Optimize by disabling worker if not needed
+      currentHls.loadSource(url);
+      currentHls.attachMedia(player);
+      currentHls.on(Hls.Events.MANIFEST_PARSED, () => {
+        player.play().catch(error => console.error('Play error:', error));
+      });
+      currentHls.on(Hls.Events.ERROR, (event, data) => {
+        if (data.fatal) {
+          console.error('HLS fatal error:', data);
+        }
+      });
+    } else if (isHlsStream && player.canPlayType('application/vnd.apple.mpegurl')) {
+      player.src = url;
+      player.addEventListener('loadedmetadata', () => {
+        player.play().catch(error => console.error('Play error:', error));
+      });
+    } else {
+      player.src = url;
+      player.addEventListener('loadedmetadata', () => {
+        player.play().catch(error => console.error('Play error:', error));
+      });
+    }
+    const overlayText = isRadio ? 'Escuchando: ' : 'Estas Viendo: ';
+    const overlay = document.getElementById('channelOverlay');
+    overlay.innerHTML = overlayText + name;
+    overlay.style.display = 'block';
+    overlay.classList.add('show');
+    setTimeout(() => {
+      overlay.classList.remove('show');
+      setTimeout(() => {
+        overlay.style.display = 'none';
+      }, 500);
+    }, 10000);
+  }
+</script>
+
+</body>
+</html>
